@@ -1,0 +1,112 @@
+body {
+    background-color: #f5f6f8;
+    color: #333;
+    font-family: Arial, sans-serif;
+}
+
+.navbar-brand {
+    color: #333;
+    font-size: 1.5rem;
+}
+
+.accordion {
+    margin-top: 20px;
+}
+
+.accordion-item {
+    margin-bottom: 16px;
+    border: none;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.accordion-button {
+    font-size: 1.4rem;
+    font-weight: 600;
+    padding: 22px;
+}
+
+.accordion-button:not(.collapsed) {
+    background-color: #fff;
+    color: #333;
+    box-shadow: none;
+}
+
+.news-link {
+    color: inherit;
+    text-decoration: none;
+}
+
+.card {
+    border: none;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: transform 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-4px);
+}
+
+.news-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
+
+.card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.card-text {
+    color: #666;
+    line-height: 1.5;
+}
+
+@media (max-width: 576px) {
+    .accordion-button {
+        font-size: 1.15rem;
+        padding: 16px;
+    }
+
+    .news-image {
+        height: 180px;
+    }
+}
+
+.carousel {
+    padding: 10px 45px 25px;
+}
+
+.carousel-item {
+    padding: 10px 0;
+}
+
+.carousel-control-prev,
+.carousel-control-next {
+    width: 40px;
+}
+
+.carousel-control-prev-icon,
+.carousel-control-next-icon {
+    border-radius: 50%;
+    padding: 18px;
+    background-size: 50%;
+}
+
+.news-image {
+    width: 100%;
+    height: 260px;
+    object-fit: cover;
+}
+
+@media (max-width: 576px) {
+    .carousel {
+        padding: 10px 25px 20px;
+    }
+
+    .news-image {
+        height: 180px;
+    }
+}
