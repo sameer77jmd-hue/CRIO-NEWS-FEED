@@ -196,53 +196,77 @@ document.addEventListener("DOMContentLoaded", () => {
     // Fallback: get the raw RSS XML from several sources (direct, then CORS
     // proxies), stop at the first that works, and convert it to the same
     // shape that rss2json returns.
+    
     async function fetchViaProxy(rssUrl) {
-        const proxyUrl =
-          "https://api.allorigins.win/raw?url=" + encodeURIComponent(rssUrl);
-      
-        const response = await fetch(proxyUrl);
-        if (!response.ok) {
-          throw new Error(`Proxy HTTP error: ${response.status}`);
+        const encoded = encodeURIComponent(rssUrl);
+
+        // Tried in order; the first one that returns real RSS/XML wins.
+        const sources = [
+            "/api/rss?url=" + encoded,                      // your own Vercel function
+            rssUrl,                                         // direct (works if CORS is enabled)
+            "https://corsproxy.io/?" + encoded,
+            "https://api.allorigins.win/raw?url=" + encoded,
+        ];
+
+        let text = null;
+        for (const src of sources) {
+            try {
+                const response = await fetch(src);
+                if (!response.ok) {
+                    throw new Error(`Proxy HTTP error: ${response.status}`);
+                }
+                const body = await response.text();
+                if (!/<(\?xml|rss|feed)/i.test(body)) {
+                    throw new Error("Response is not RSS XML");
+                }
+                text = body;
+                break;
+            } catch (err) {
+                console.warn("RSS source failed:", src, err);
+            }
         }
-      
-        const text = await response.text();
+
+        if (text === null) {
+            throw new Error("All RSS sources failed");
+        }
+
         const xml = new DOMParser().parseFromString(text, "text/xml");
         if (xml.querySelector("parsererror")) {
-          throw new Error("Invalid RSS XML");
+            throw new Error("Invalid RSS XML");
         }
-      
+
         const getText = (item, tag) =>
-          item.getElementsByTagName(tag)[0]?.textContent?.trim() || "";
-      
+            item.getElementsByTagName(tag)[0]?.textContent?.trim() || "";
+
         const items = [...xml.getElementsByTagName("item")].map((item) => {
-          const enclosure = item.getElementsByTagName("enclosure")[0];
-          const media =
-            item.getElementsByTagName("media:content")[0] ||
-            item.getElementsByTagName("media:thumbnail")[0];
-      
-          return {
-            title: getText(item, "title"),
-            pubDate: getText(item, "pubDate"),
-            link: getText(item, "link"),
-            guid: getText(item, "guid"),
-            author: getText(item, "author") || getText(item, "dc:creator"),
-            thumbnail: media?.getAttribute("url") || enclosure?.getAttribute("url") || "",
-            description: getText(item, "description"),
-            content: getText(item, "content:encoded"),
-            enclosure: { link: enclosure?.getAttribute("url") || "" },
-            categories: [...item.getElementsByTagName("category")].map((c) => c.textContent),
-          };
+            const enclosure = item.getElementsByTagName("enclosure")[0];
+            const media =
+                item.getElementsByTagName("media:content")[0] ||
+                item.getElementsByTagName("media:thumbnail")[0];
+
+            return {
+                title: getText(item, "title"),
+                pubDate: getText(item, "pubDate"),
+                link: getText(item, "link"),
+                guid: getText(item, "guid"),
+                author: getText(item, "author") || getText(item, "dc:creator"),
+                thumbnail: media?.getAttribute("url") || enclosure?.getAttribute("url") || "",
+                description: getText(item, "description"),
+                content: getText(item, "content:encoded"),
+                enclosure: { link: enclosure?.getAttribute("url") || "" },
+                categories: [...item.getElementsByTagName("category")].map((c) => c.textContent),
+            };
         });
-      
+
         return {
-          status: "ok",
-          feed: {
-            title: getText(xml, "title"),
-            link: getText(xml, "link"),
-          },
-          items,
+            status: "ok",
+            feed: {
+                title: getText(xml, "title"),
+                link: getText(xml, "link"),
+            },
+            items,
         };
-      }
+    }
 
     // Try rss2json first; if it fails (403, CORS, etc.), use the fallback.
     async function fetchFeed(rssUrl) {
@@ -316,7 +340,7 @@ document.addEventListener("DOMContentLoaded", () => {
         createAccordion(topics[index] || `Topic ${index + 1}`, index);
     });
 
-    // Step 2: load the feeds one at a time to avoid rate limiting.
+    // Step 2: Load the feeds one at a time to avoid rate limiting.
     (async () => {
         for (let index = 0; index < magazines.length; index++) {
             await loadNews(magazines[index], index);
